@@ -11,7 +11,7 @@ pub mod pipeline;
 pub mod transform;
 pub mod wav;
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct ChannelCount(u16);
 
 impl ChannelCount {

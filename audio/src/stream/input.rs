@@ -1,9 +1,9 @@
-use super::executor::CHANNEL_MAX;
 use async_channel;
 use async_channel::{Receiver, TryRecvError, TrySendError};
-use cpal;
+use cpal::{self, SupportedStreamConfigRange};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
+use super::executor::CHANNEL_MAX;
 use super::pipeline::Step;
 
 // TODO: move other users to use the new location of these:
@@ -70,6 +70,11 @@ impl<I: Input, S: Step<Input = I::Item>> Input for InputAdapter<I, S> {
     }
 }
 
+#[derive(Debug)]
+pub enum InputDeviceError {
+    UnsupportedChannelCount(ChannelCount, Vec<SupportedStreamConfigRange>),
+}
+
 /// Opens a stream from an audio input device, receives sample data callbacks
 /// (which are called by a thread owned by the audio library), and sends the
 /// data to consuming threads via `async_channel`.
@@ -80,7 +85,7 @@ pub struct InputDevice {
 }
 
 impl InputDevice {
-    pub fn new(channels: ChannelCount, sample_rate: SampleRate) -> InputDevice {
+    pub fn new(channels: ChannelCount, sample_rate: SampleRate) -> Result<InputDevice, InputDeviceError> {
         let host = cpal::default_host();
         // TODO: some way of selecting from available devices?
         let device = host.default_input_device().unwrap();
@@ -94,9 +99,16 @@ impl InputDevice {
             }
         }
 
-        // TODO: what if the desired channel count isn't supported?!
-        // TODO: make sure the desired sample rate is actually supported and
-        // figure out how to handle it not being so.
+        if let None = supported {
+            return Err(InputDeviceError::UnsupportedChannelCount(
+                channels, 
+                device.supported_input_configs().map_or(
+                    Vec::new(),
+                    |opts| opts.into_iter().collect()
+                )));
+        }
+
+        // TODO: make sure the desired sample rate is actually supported
         // TODO: set a buffer size (within supported range) instead of just
         // using the default? cpal has a warning that some devices default
         // to very large buffers resulting in high input latency.
@@ -140,10 +152,10 @@ impl InputDevice {
         // so this is possibly necessary.
         stream.play().expect("Failed to start stream");
 
-        InputDevice {
+        Ok(InputDevice {
             frames: receiver,
             _stream: stream,
-        }
+        })
     }
 }
 

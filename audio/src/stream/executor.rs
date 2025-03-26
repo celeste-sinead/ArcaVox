@@ -1,3 +1,4 @@
+use std::process::exit;
 use std::thread;
 // use std::marker::Send;
 
@@ -91,8 +92,14 @@ impl Executor {
         thread::spawn(move || {
             // cpal::StreamTrait isn't Send, so the input device needs to
             // be opened on the executor thread.
-            let input = InputDevice::new(self.channels, self.sample_rate);
-            self.run(input);
+            match InputDevice::new(self.channels, self.sample_rate) {
+                Ok(input) => self.run(input),
+                Err(err) => {
+                    // TODO: propagate this, instead of terminating
+                    println!("Failed to open input: {:?}", err);
+                    exit(-1);
+                }
+            } 
         })
     }
 }
