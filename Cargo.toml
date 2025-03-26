@@ -5,6 +5,7 @@ members = [
     "charts",
     "notebook",
     "synth_app",
+    "ui",
 ]
 resolver = "2"
 
