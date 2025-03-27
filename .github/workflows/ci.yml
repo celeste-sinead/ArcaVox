@@ -23,3 +23,5 @@ jobs:
       run: cargo build --locked
     - name: Run tests
       run: cargo test --locked
+    - name: Clippy
+      run: cargo clippy --all -- -D clippy::suspicious
