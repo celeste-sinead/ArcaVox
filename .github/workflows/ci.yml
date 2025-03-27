@@ -17,6 +17,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
+    - name: Install deps
+      run: sudo ./install_deps.sh ${{ matrix.os }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests

@@ -2,5 +2,5 @@
 
 ## Ubuntu
 ```
-sudo apt install libasound2-dev
+sudo ./install_deps.sh ubuntu-latest
 ```
