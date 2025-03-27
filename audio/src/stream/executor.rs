@@ -72,7 +72,7 @@ impl Executor {
             match input.read() {
                 Ok(f) => {
                     for m in self.process(&f) {
-                        if let Err(_) = self.sender.send_blocking(m) {
+                        if self.sender.send_blocking(m).is_err() {
                             println!("Executor exit: UI closed.");
                             return;
                         }
@@ -113,7 +113,7 @@ where
 {
     pipeline: Pipeline<I, S, OutputDevice>,
     receiver: Receiver<Cmd>,
-    update: Box<dyn Fn(&mut Pipeline<I, S, OutputDevice>, Cmd) -> ()>,
+    update: Box<dyn Fn(&mut Pipeline<I, S, OutputDevice>, Cmd)>,
 }
 
 impl<I, S, Cmd> PipelineExecutor<I, S, Cmd>
@@ -130,7 +130,7 @@ where
         update: Box<UpdateFn>,
     ) -> (Sender<Cmd>, Receiver<()>, thread::JoinHandle<()>)
     where
-        UpdateFn: Fn(&mut Pipeline<I, S, OutputDevice>, Cmd) -> () + Send + 'static,
+        UpdateFn: Fn(&mut Pipeline<I, S, OutputDevice>, Cmd) + Send + 'static,
     {
         let (req_send, req_recv) = async_channel::bounded(CHANNEL_MAX);
         let (_msg_send, msg_recv) = async_channel::bounded(CHANNEL_MAX);

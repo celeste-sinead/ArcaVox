@@ -54,7 +54,7 @@ impl SampleBuffer {
     }
 
     fn len(&self) -> usize {
-        return cmp::min(self.sample_count, self.max_len);
+        cmp::min(self.sample_count, self.max_len)
     }
 
     fn oldest_sample_index(&self) -> usize {
@@ -135,6 +135,10 @@ impl<'a> Period<'a> {
             .collect()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     pub fn len(&self) -> usize {
         self.len
     }
@@ -165,6 +169,10 @@ impl<'a> ChannelPeriod<'a> {
         self.slices.0.iter().chain(self.slices.1.iter())
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     pub fn len(&self) -> usize {
         self.len
     }
@@ -188,7 +196,7 @@ pub struct TimeseriesIterator<'a> {
     index: usize,
 }
 
-impl<'a> Iterator for TimeseriesIterator<'a> {
+impl Iterator for TimeseriesIterator<'_> {
     type Item = (Instant, f32);
     fn next(&mut self) -> Option<Self::Item> {
         let slice = if self.first_slice {
@@ -206,13 +214,11 @@ impl<'a> Iterator for TimeseriesIterator<'a> {
             ));
             self.index += 1;
             res
-        } else {
-            if self.first_slice {
+        } else if self.first_slice {
                 self.first_slice = false;
                 self.next()
-            } else {
-                None
-            }
+        } else {
+            None
         }
     }
 }

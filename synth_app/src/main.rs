@@ -71,7 +71,7 @@ fn view(synth: &Synthesizer) -> Element<Message> {
             widget::Space::new(Length::Fixed(10.), Length::Shrink),
             widget::slider(
                 50f32..=2000f32,
-                f32::from(synth.frequency),
+                synth.frequency,
                 Message::FrequencyChanged
             ),
             widget::Space::new(Length::Fixed(10.), Length::Shrink),

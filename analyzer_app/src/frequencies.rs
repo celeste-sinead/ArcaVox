@@ -2,7 +2,6 @@ use iced::{Element, Length};
 use plotters_iced::{Chart, ChartBuilder, ChartWidget, DrawingBackend};
 
 use audio::{FFTResult, Message};
-use charts;
 
 pub struct FrequenciesChart {
     latest_ffts: Option<FFTResult>,

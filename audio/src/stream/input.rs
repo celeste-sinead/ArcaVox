@@ -99,7 +99,7 @@ impl InputDevice {
             }
         }
 
-        if let None = supported {
+        if supported.is_none() {
             return Err(InputDeviceError::UnsupportedChannelCount(
                 channels, 
                 device.supported_input_configs().map_or(

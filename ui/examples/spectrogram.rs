@@ -1,5 +1,5 @@
 use iced::widget::canvas;
-use iced::{widget, Element, Length, Padding, Size};
+use iced::{widget, Element, Length, Padding};
 
 extern crate ui;
 use ui::spectrogram::Spectrogram;

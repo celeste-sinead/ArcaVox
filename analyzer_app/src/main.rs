@@ -1,6 +1,5 @@
 use std::thread::JoinHandle;
 
-use async_channel;
 use async_channel::Receiver;
 use clap::Parser;
 use futures::sink::SinkExt;

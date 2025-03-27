@@ -102,7 +102,7 @@ impl OutputDevice {
                     },
                     None, // blocking (??)
                 )
-                .map_err(|e| OpenError::BuildStreamError(e))?,
+                .map_err(OpenError::BuildStreamError)?,
         );
         stream.play().or(Err(OpenError::PlayStreamError))?;
 

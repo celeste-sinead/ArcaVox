@@ -53,8 +53,8 @@ impl Chart<Message> for LevelsChart {
         chart
             .configure_series_labels()
             .position(SeriesLabelPosition::LowerLeft)
-            .background_style(&WHITE.mix(0.8))
-            .border_style(&BLACK)
+            .background_style(WHITE.mix(0.8))
+            .border_style(BLACK)
             .draw()
             .expect("draw series labels");
     }
@@ -78,7 +78,7 @@ impl LevelsChart {
     }
 
     pub fn update(&mut self, message: RMSLevels) {
-        if self.times.len() == 0 {
+        if self.times.is_empty() {
             // First update, which tells us the channel count
             self.times.push_back(message.time);
             self.levels.append(

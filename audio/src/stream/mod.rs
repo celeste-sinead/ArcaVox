@@ -87,7 +87,7 @@ impl Default for Instant {
 
 impl From<Instant> for f32 {
     fn from(v: Instant) -> f32 {
-        v.0 as f32
+        v.0
     }
 }
 

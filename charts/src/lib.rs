@@ -35,7 +35,7 @@ pub fn build_fft_chart<DB: DrawingBackend>(
         .draw_series(LineSeries::new(magnitudes, &RED))
         .unwrap()
         .label("Amplitude")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], RED));
 
     // TODO: include phase in notebooks, but not UI :/
     // let phases = fft
@@ -51,8 +51,8 @@ pub fn build_fft_chart<DB: DrawingBackend>(
     chart
         .configure_series_labels()
         .position(SeriesLabelPosition::UpperRight)
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
+        .background_style(WHITE.mix(0.8))
+        .border_style(BLACK)
         .draw()?;
 
     Ok(())

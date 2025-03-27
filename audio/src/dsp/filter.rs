@@ -15,7 +15,7 @@ pub struct LTI {
 impl LTI {
     pub fn new(feedback: Vec<f32>, feedforward: Vec<f32>) -> LTI {
         assert_eq!(feedback[0], 1.0);
-        assert!(feedforward.len() > 0);
+        assert!(!feedforward.is_empty());
         let mut inputs = VecDeque::with_capacity(feedforward.len());
         inputs.resize(feedforward.len(), 0.0);
         let mut outputs = VecDeque::with_capacity(feedback.len());
