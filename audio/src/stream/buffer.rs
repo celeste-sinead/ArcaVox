@@ -20,7 +20,9 @@ pub struct SampleBuffer {
     sample_count: usize,
 }
 
+#[warn(clippy::pedantic)]
 impl SampleBuffer {
+    #[must_use]
     pub fn new(channels: ChannelCount, sample_rate: SampleRate, max_len: usize) -> SampleBuffer {
         let mut buffers = Vec::new();
         for _ in 0..usize::from(channels) {
@@ -37,6 +39,24 @@ impl SampleBuffer {
         }
     }
 
+    #[must_use]
+    pub fn from_mono<I: Iterator<Item = f32>>(
+        sample_rate: SampleRate, samples: &mut I, max_len: usize) -> Self
+    {
+        let mut res = SampleBuffer::new(ChannelCount::new(1), sample_rate, max_len);
+        res.push_some_mono(samples, max_len);
+        res
+    }
+
+    fn len(&self) -> usize {
+        cmp::min(self.sample_count, self.max_len)
+    }
+
+    fn oldest_sample_index(&self) -> usize {
+        self.sample_count - self.len()
+    }
+
+    #[allow(clippy::missing_panics_doc)]
     pub fn push(&mut self, f: &Frame) {
         assert!(f.channels == self.channels);
         assert!(f.sample_rate == self.sample_rate);
@@ -53,12 +73,36 @@ impl SampleBuffer {
         }
     }
 
-    fn len(&self) -> usize {
-        cmp::min(self.sample_count, self.max_len)
+    #[allow(clippy::missing_panics_doc)]
+    pub fn push_some_mono<I: Iterator<Item = f32>>(&mut self, samples: &mut I, max_count: usize) -> usize {
+        assert!(usize::from(self.channels) == 1);
+        let pushed = self.push_channel(0, samples, max_count);
+        self.sample_count += pushed;
+        pushed
     }
 
-    fn oldest_sample_index(&self) -> usize {
-        self.sample_count - self.len()
+    /// Push samples to a channel, but WITHOUT updating `sample_count`
+    /// This must be used across all channels and then `sample_count` updated appropriately.
+    #[must_use]
+    fn push_channel<I: Iterator<Item = f32>>(
+        &mut self,
+        ch: usize,
+        samples: &mut I,
+        max_count: usize,
+    ) -> usize {
+        let mut pushed = 0;
+        while pushed < max_count {
+            if let Some(s) = samples.next() {
+                if self.buffers[ch].len() == self.max_len {
+                    self.buffers[ch].pop_front();
+                }
+                self.buffers[ch].push_back(s);
+                pushed += 1;
+            } else {
+                break;
+            }
+        }
+        pushed
     }
 }
 
@@ -68,7 +112,7 @@ impl SampleBuffer {
     /// buffer, returning fewer if n are not available.
     fn peek_tail(&self, channel: usize, n: usize) -> &[f32] {
         let (a, b) = self.buffers[channel].as_slices();
-        if b.len() == 0 {
+        if b.is_empty() {
             let avail = cmp::min(a.len(), n);
             &a[a.len() - avail..]
         } else {
@@ -428,6 +472,15 @@ mod tests {
     }
 
     #[test]
+    fn from_iter_mono() {
+        let mut buf = SampleBuffer::from_mono(SampleRate::new(1), &mut [1., 2., 3.].into_iter(), 16);
+        assert_eq!(buf.buffers[0].as_slices().0, [1., 2., 3.].as_slice());
+        assert_eq!(buf.push_some_mono(&mut [4., 5., 6.].into_iter(), 2), 2);
+        assert_eq!(buf.buffers[0].as_slices().0, [1., 2., 3., 4., 5.].as_slice());
+        assert_eq!(buf.len(), 5);
+    }
+
+    #[test]
     fn basic_period_stream() {
         let mut stream = PeriodBuffer::new(
             SampleBuffer::new(ChannelCount::new(1), SampleRate::new(44100), 100),
@@ -513,7 +566,7 @@ mod tests {
             let (a, b) = p.get_channel(0).slices;
             assert_eq!(a, [6., 7.]);
             assert_eq!(b, [8., 9.]);
-            let v: Vec<f32> = p.get_channel(0).iter().map(|x| *x).collect();
+            let v: Vec<f32> = p.get_channel(0).iter().copied().collect();
             assert_eq!(v, [6., 7., 8., 9.])
         } else {
             panic!("expected period");
