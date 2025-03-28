@@ -192,11 +192,11 @@ impl<'a> Period<'a> {
     }
 
     pub fn start_time(&self) -> Instant {
-        Instant::from_sample_num(self.start_sample_num, self.buffer.sample_rate)
+        Instant::new(self.start_sample_num, self.buffer.sample_rate)
     }
 
     pub fn end_time(&self) -> Instant {
-        Instant::from_sample_num(self.start_sample_num + self.len, self.buffer.sample_rate)
+        Instant::new(self.start_sample_num + self.len, self.buffer.sample_rate)
     }
 }
 
@@ -250,7 +250,7 @@ impl Iterator for TimeseriesIterator<'_> {
         };
         if self.index < slice.len() {
             let res = Some((
-                Instant::from_sample_num(
+                Instant::new(
                     self.period.start_sample_num + self.index,
                     self.period.sample_rate,
                 ),

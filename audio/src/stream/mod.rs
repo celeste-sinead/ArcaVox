@@ -1,7 +1,7 @@
 use std::ops::{Add, Sub};
-use std::time::Duration;
+use std::time;
 
-use cpal;
+use cpal::{self};
 
 pub mod buffer;
 pub mod executor;
@@ -68,34 +68,48 @@ impl From<SampleRate> for cpal::SampleRate {
 /// Represents a point in time, in seconds, in a signal
 /// Essentially the same as std::time::Instant, but the latter is unusably
 /// opaque.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Instant(f32);
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Instant{
+    sample_index: usize,
+    sample_rate: SampleRate,
+}
 
 impl Instant {
-    pub const ZERO: Instant = Instant(0.);
+    pub fn new(sample_index: usize, sample_rate: SampleRate) -> Instant {
+        Instant{sample_index, sample_rate}
+    }
 
-    pub fn from_sample_num(sample: usize, rate: SampleRate) -> Instant {
-        Instant(sample as f32 / f32::from(rate))
+    pub fn as_secs_from_start_f32(self: Instant) -> f32 {
+        Duration::from_start(self).as_secs_f32()
     }
 }
 
-impl Default for Instant {
-    fn default() -> Instant {
-        Instant(0.)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Duration{
+    sample_count: usize,
+    sample_rate: SampleRate,
+}
+
+impl Duration {
+    pub fn new(sample_count: usize, sample_rate: SampleRate) -> Duration {
+        Duration{sample_count, sample_rate}
+    }
+
+    pub fn from_start(i: Instant) -> Duration {
+        Duration{sample_count: i.sample_index, sample_rate: i.sample_rate}
+    }
+
+    pub fn as_secs_f32(self: Duration) -> f32 {
+        time::Duration::from(self).as_secs_f32()
     }
 }
 
-impl From<Instant> for f32 {
-    fn from(v: Instant) -> f32 {
-        v.0
-    }
-}
-
-impl Add<Duration> for Instant {
-    type Output = Instant;
-
-    fn add(self, rhs: Duration) -> Instant {
-        Instant(self.0 + rhs.as_secs_f32())
+impl From<Duration> for time::Duration {
+    fn from(stream_dur: Duration) -> Self {
+        let secs= stream_dur.sample_count as u64 / stream_dur.sample_rate.0 as u64;
+        let remain= stream_dur.sample_count % usize::from(stream_dur.sample_rate);
+        let nanos = remain * 1000 * 1000 * 1000 / usize::from(stream_dur.sample_rate);
+        time::Duration::new(secs, nanos as u32)
     }
 }
 
@@ -103,7 +117,7 @@ impl Sub for Instant {
     type Output = Duration;
 
     fn sub(self, rhs: Instant) -> Duration {
-        Duration::from_secs_f32(self.0 - rhs.0)
+        Duration::new(rhs.sample_index.checked_sub(self.sample_index).unwrap(), self.sample_rate)
     }
 }
 
@@ -111,9 +125,18 @@ impl Sub<Duration> for Instant {
     type Output = Instant;
 
     fn sub(self, rhs: Duration) -> Instant {
-        Instant(self.0 - rhs.as_secs_f32())
+        Instant::new(self.sample_index.checked_sub(rhs.sample_count).unwrap(), self.sample_rate)
     }
 }
+
+impl Add<Duration> for Instant {
+    type Output = Instant;
+
+    fn add(self, rhs: Duration) -> Instant {
+        Instant::new(self.sample_index + rhs.sample_count, self.sample_rate)
+    }
+}
+
 
 /// A batch of samples received from an input device.
 pub struct Frame {

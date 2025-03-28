@@ -57,7 +57,7 @@ impl Analyzer {
         );
 
         Analyzer {
-            time: Instant::default(),
+            time: Instant::new(0, SampleRate::new(1)),
             rms_levels: Vec::new(),
             _audio_thread: executor.start(),
             audio_messages,

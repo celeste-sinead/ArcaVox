@@ -10,6 +10,7 @@ pub use std::f32::consts::PI;
 
 pub use audio;
 pub use audio::dsp::fft::FoldedFFT;
+pub use audio::stream::Duration;
 pub use audio::stream::buffer::{BufferedInput, Period};
 pub use audio::stream::input::SampleRate;
 pub use charts;
@@ -23,20 +24,19 @@ pub fn plot_period(period: &Period) -> SVGWrapper {
         assert!(u16::from(period.channel_count()) == 1);
 
         root.fill(&WHITE)?;
+        let start_s = Duration::from_start(period.start_time()).as_secs_f32();
+        let end_s = Duration::from_start(period.end_time()).as_secs_f32();
         let mut chart = ChartBuilder::on(&root)
             .margin(20)
             .x_label_area_size(30)
             .y_label_area_size(30)
-            .build_cartesian_2d(
-                f32::from(period.start_time())..f32::from(period.end_time()),
-                -1f32..1f32,
-            )?;
+            .build_cartesian_2d( start_s..end_s, -1f32..1f32,)?;
         chart.configure_mesh().draw()?;
 
         let series = period
             .get_channel(0)
             .into_timeseries()
-            .map(|(t, y)| (f32::from(t), y));
+            .map(|(t, y)| (t.as_secs_from_start_f32(), y));
 
         chart.draw_series(LineSeries::new(series, &RED)).unwrap();
 

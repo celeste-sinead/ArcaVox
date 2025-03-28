@@ -1,19 +1,19 @@
 use std::collections::VecDeque;
 use std::iter::zip;
-use std::time::Duration;
+use std::time;
 
 use iced::{Element, Length};
 use plotters_iced::{Chart, ChartBuilder, ChartWidget, DrawingBackend};
 
 use audio::dsp::Decibels;
-use audio::stream::input::Instant;
+use audio::stream;
 use audio::{Message, RMSLevels};
 
 pub struct LevelsChart {
     /// The width of the chart
-    max_history: Duration,
+    max_history: time::Duration,
     /// The time value for each point
-    times: VecDeque<Instant>,
+    times: VecDeque<stream::Instant>,
     /// By channel, series of levels (dBFS), corresponding to each time
     levels: Vec<VecDeque<Decibels>>,
 }
@@ -24,8 +24,9 @@ impl Chart<Message> for LevelsChart {
     fn build_chart<DB: DrawingBackend>(&self, _state: &Self::State, mut builder: ChartBuilder<DB>) {
         use plotters::prelude::*;
 
-        let tmin = f32::from(*self.times.front().unwrap_or(&Instant::ZERO));
-        let tmax = f32::from(*self.times.back().unwrap_or(&Instant::ZERO))
+        let tmin = self.times.front().map_or(0., |t| t.as_secs_from_start_f32());
+        let tmax = self.times.back()
+            .map_or(0., |t| t.as_secs_from_start_f32())
             .max(self.max_history.as_secs_f32());
 
         let mut chart = builder
@@ -42,7 +43,7 @@ impl Chart<Message> for LevelsChart {
         for (i, (ch, color)) in zip(&self.levels, [BLUE, GREEN, RED, CYAN]).enumerate() {
             chart
                 .draw_series(LineSeries::new(
-                    zip(&self.times, ch).map(|(t, rms)| (f32::from(*t), f32::from(*rms))),
+                    zip(&self.times, ch).map(|(t, rms)| (t.as_secs_from_start_f32(), f32::from(*rms))),
                     color,
                 ))
                 .expect("draw series")
@@ -62,7 +63,7 @@ impl Chart<Message> for LevelsChart {
 
 #[allow(dead_code)]
 impl LevelsChart {
-    pub fn new(max_history: Duration) -> LevelsChart {
+    pub fn new(max_history: time::Duration) -> LevelsChart {
         LevelsChart {
             max_history,
             times: VecDeque::new(),
@@ -102,7 +103,7 @@ impl LevelsChart {
         }
 
         // Truncate the beginning of history as it ages out
-        while message.time - *self.times.front().unwrap() > self.max_history {
+        while time::Duration::from(message.time - *self.times.front().unwrap()) > self.max_history {
             self.times.pop_front();
             for ch in &mut self.levels {
                 ch.pop_front();

@@ -89,8 +89,8 @@ mod tests {
     fn assert_response(lti: &mut LTI, input: &[f32], expect_output: &[f32]) {
         assert_eq!(input.len(), expect_output.len());
         let mut output = Vec::new();
-        for i in 0..input.len() {
-            lti.push_input(input[i]);
+        for s in input {
+            lti.push_input(*s);
             output.push(lti.pop_output().unwrap());
         }
         assert_eq!(expect_output, &output);
