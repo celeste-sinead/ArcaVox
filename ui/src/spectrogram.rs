@@ -1,13 +1,23 @@
 use iced::{mouse, widget::canvas};
-use iced::{Color, Rectangle, Renderer, Theme};
+use iced::{Color, Point, Rectangle, Renderer, Size, Theme};
+
+use audio::dsp::fft::FoldedFFT;
 
 pub struct Spectrogram {
-    pub radius: f32,
+    fft: FoldedFFT
+}
+
+impl Spectrogram {
+    #[must_use]
+    pub fn new(fft: FoldedFFT) -> Self {
+        Self { fft }
+    }
 }
 
 impl<Message> canvas::Program<Message> for Spectrogram {
     type State = ();
 
+    #[allow(clippy::cast_precision_loss)]
     fn draw(
         &self,
         _state: &Self::State,
@@ -16,17 +26,16 @@ impl<Message> canvas::Program<Message> for Spectrogram {
         bounds: Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<canvas::Geometry<Renderer>> {
-        println!("bounds: {bounds:?}");
-        // We prepare a new `Frame`
         let mut frame = canvas::Frame::new(renderer, bounds.size());
+        let bin_frac = 1. /  self.fft.values.len() as f32;
+        for (i, (r, _theta)) in self.fft.values.iter().enumerate() {
+            frame.fill_rectangle(
+                Point::new(0., (1.0 - (i as f32 + 1.)*bin_frac)*frame.height()),
+                Size::new(frame.width()*bin_frac, frame.height()*bin_frac),
+                Color::from_rgb(*r, *r, *r)
+            );
+        }
 
-        // We create a `Path` representing a simple circle
-        let circle = canvas::Path::circle(frame.center(), self.radius);
-
-        // And fill it with some color
-        frame.fill(&circle, Color::BLACK);
-
-        // Then, we produce the geometry
         vec![frame.into_geometry()]
     }
 }

@@ -158,6 +158,16 @@ pub struct FoldedFFT {
 }
 
 impl FoldedFFT {
+    /// Convenience for creating from literal magnitudes; assumes even window length
+    /// and zero phase
+    pub fn from_magnitudes(magnitudes: &[f32], sample_rate: SampleRate) -> Self {
+        Self {
+            values: magnitudes.iter().map(|r| (*r, 0.)).collect(),
+            sample_rate,
+            unfolded_length: magnitudes.len() * 2,
+        }
+    }
+
     pub fn frequencies(&self) -> Box<dyn Iterator<Item = Hz> + '_> {
         Box::new(
             (0..self.values.len())
