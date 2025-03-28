@@ -290,7 +290,7 @@ mod tests {
         assert_abs_diff_eq!(
             fft,
             PolarFFT {
-                values: vec![(6., 0.), (2.83, 2.36), (2.0, 3.14), (2.83, -2.36)],
+                values: vec![(6., 0.), (2.83, 2.36), (2.0, PI), (2.83, -2.36)],
                 sample_rate: SampleRate::new(42)
             },
             epsilon = 1e-2
@@ -299,7 +299,7 @@ mod tests {
         assert_abs_diff_eq!(
             folded,
             FoldedFFT {
-                values: vec![(1.5, 0.), (2.83 / 2., 2.36), (0.5, 3.14)],
+                values: vec![(1.5, 0.), (2.83 / 2., 2.36), (0.5, PI)],
                 sample_rate: SampleRate::new(42),
                 unfolded_length: 4
             },

@@ -16,7 +16,7 @@ impl<Message> canvas::Program<Message> for Spectrogram {
         bounds: Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<canvas::Geometry<Renderer>> {
-        println!("bounds: {:?}", bounds);
+        println!("bounds: {bounds:?}");
         // We prepare a new `Frame`
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 

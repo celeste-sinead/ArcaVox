@@ -72,8 +72,8 @@ pub struct Identity<T> {
     next: Option<T>,
 }
 
-impl<T> Identity<T> {
-    pub fn new() -> Identity<T> {
+impl<T> Default for Identity<T> {
+    fn default() -> Identity<T> {
         Identity { next: None }
     }
 }

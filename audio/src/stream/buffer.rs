@@ -265,6 +265,7 @@ impl PeriodBuffer {
     }
 
     /// Get the next available Period, if any
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Option<Period> {
         if self.has_next() {
             let period = Period {
@@ -298,6 +299,7 @@ impl<T: Input<Item = Frame>> BufferedInput<T> {
         Ok(BufferedInput { input, buffer })
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Result<Period, InputError> {
         // Read from the input until a full period is available
         while !self.buffer.has_next() {

@@ -99,7 +99,7 @@ impl Executor {
                     println!("Failed to open input: {:?}", err);
                     exit(-1);
                 }
-            } 
+            }
         })
     }
 }
@@ -113,6 +113,7 @@ where
 {
     pipeline: Pipeline<I, S, OutputDevice>,
     receiver: Receiver<Cmd>,
+    #[allow(clippy::type_complexity)]
     update: Box<dyn Fn(&mut Pipeline<I, S, OutputDevice>, Cmd)>,
 }
 
@@ -122,7 +123,7 @@ where
     S: Step<Input = I::Item, Output = Frame> + Send + 'static,
     Cmd: Send + 'static,
 {
-    pub fn new<UpdateFn>(
+    pub fn start<UpdateFn>(
         channels: ChannelCount,
         sample_rate: SampleRate,
         input: I,

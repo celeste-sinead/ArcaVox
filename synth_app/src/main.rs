@@ -25,7 +25,7 @@ impl Default for Synthesizer {
     fn default() -> Synthesizer {
         let channels = ChannelCount::new(1);
         let sample_rate = SampleRate::new(44100);
-        let (request_sender, _recv, _join) = executor::PipelineExecutor::new(
+        let (request_sender, _recv, _join) = executor::PipelineExecutor::start(
             channels,
             sample_rate,
             SinIterator::new(sample_rate, 200., 0.),
