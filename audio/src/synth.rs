@@ -63,6 +63,34 @@ impl Iterator for SinIterator {
     }
 }
 
+pub struct ChirpIterator {
+    base_freq: f32,
+    freq_slope: f32,
+    clock: SampleClock,
+}
+
+impl ChirpIterator {
+    /// frequency is in Hz, slope is Hz/s
+    pub fn new(sample_rate: SampleRate, base_freq: f32, freq_slope: f32) -> Self {
+        ChirpIterator {
+            base_freq,
+            freq_slope,
+            clock: SampleClock::new(sample_rate)
+        }
+    }
+}
+
+impl Iterator for ChirpIterator {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<f32> {
+        let t = self.clock.next().unwrap(); // (infinite)
+        // See https://en.wikipedia.org/wiki/Chirp#Linear
+        // TODO: tests, I might have the Hz->rad/s conversion fucky
+        Some((PI * (t*t*self.freq_slope + 2.0*t*self.base_freq)).sin())
+    }
+}
+
 pub struct Gain {
     gain: f32,
     next: Option<f32>,

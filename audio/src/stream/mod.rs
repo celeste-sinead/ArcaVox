@@ -82,6 +82,11 @@ impl Instant {
     pub fn as_secs_from_start_f32(self: Instant) -> f32 {
         Duration::from_start(self).as_secs_f32()
     }
+
+    pub fn index(&self, rate: SampleRate) -> usize {
+        assert_eq!(self.sample_rate, rate);
+        self.sample_index
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -137,6 +142,30 @@ impl Add<Duration> for Instant {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Period{
+    start_index: usize,
+    sample_count: usize,
+    sample_rate: SampleRate
+}
+
+impl Period {
+    pub fn new(start_index: usize, sample_count: usize, sample_rate: SampleRate) -> Self {
+        Self {start_index, sample_count, sample_rate}
+    }
+
+    pub fn start(&self) -> Instant {
+        Instant::new(self.start_index, self.sample_rate)
+    }
+
+    pub fn end(&self) -> Instant {
+        Instant::new(self.start_index + self.sample_count, self.sample_rate)
+    }
+
+    pub fn duration(&self) -> Duration {
+        Duration::new(self.sample_count, self.sample_rate)
+    }
+}
 
 /// A batch of samples received from an input device.
 pub struct Frame {

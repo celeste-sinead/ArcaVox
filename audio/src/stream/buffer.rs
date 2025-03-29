@@ -4,8 +4,9 @@ use std::iter;
 use std::mem;
 use std::slice;
 
-use super::input::{ChannelCount, Frame, Input, InputAdapter, InputError, Instant, SampleRate};
+use super::input::{ChannelCount, Frame, Input, InputAdapter, InputError};
 use super::pipeline::Step;
+use super::{Instant, SampleRate};
 
 /// A set of per-channel ringbuffers. This accomplishes two things:
 /// - de-interlaces the samples we receive from the device, because ~everything
@@ -103,6 +104,21 @@ impl SampleBuffer {
             }
         }
         pushed
+    }
+
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)]
+    #[allow(clippy::needless_lifetimes)] // (false positive - cannot be elided)
+    pub fn get_window<'a>(&'a self, period: super::Period) -> Period<'a> {
+        let start_index = period.start().index(self.sample_rate);
+        assert!(start_index >= self.oldest_sample_index());
+        let end_index = period.end().index(self.sample_rate);
+        assert!(end_index <= self.sample_count);
+        Period {
+            buffer: self,
+            len: end_index - start_index,
+            start_sample_num: start_index,
+        }
     }
 }
 
