@@ -6,7 +6,7 @@ use approx::AbsDiffEq;
 use num_complex::Complex;
 use rustfft::{Fft, FftPlanner};
 
-use super::Hz;
+use crate::Hz;
 use crate::stream::buffer::ChannelPeriod;
 use crate::stream::input::SampleRate;
 

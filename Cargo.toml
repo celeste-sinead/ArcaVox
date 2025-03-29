@@ -13,9 +13,12 @@ resolver = "2"
 audio = { path = "audio" }
 charts = { path = "charts" }
 
+approx = "0.5.1"
 async-channel = "2.3"
 futures = "0.3"
 iced = { version = "0.13", features = ["advanced", "canvas"] }
 num-complex = "0.4"
+num-derive = "0.4"
+num-traits = "0.2"
 plotters = { version = "0.3", features = ["evcxr"] }
 plotters-iced = "0.11"

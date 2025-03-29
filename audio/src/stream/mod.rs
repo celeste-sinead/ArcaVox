@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::ops::{Add, Sub};
 use std::time;
 
@@ -89,6 +90,19 @@ impl Instant {
     }
 }
 
+impl PartialOrd for Instant {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Instant {
+    fn cmp(&self, other: &Self) -> Ordering {
+        assert_eq!(self.sample_rate, other.sample_rate);
+        self.sample_index.cmp(&other.sample_index)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Duration{
     sample_count: usize,
@@ -107,6 +121,10 @@ impl Duration {
     pub fn as_secs_f32(self: Duration) -> f32 {
         time::Duration::from(self).as_secs_f32()
     }
+
+    pub fn sample_count(&self) -> usize {
+        self.sample_count
+    }
 }
 
 impl From<Duration> for time::Duration {
@@ -122,7 +140,7 @@ impl Sub for Instant {
     type Output = Duration;
 
     fn sub(self, rhs: Instant) -> Duration {
-        Duration::new(rhs.sample_index.checked_sub(self.sample_index).unwrap(), self.sample_rate)
+        Duration::new(self.sample_index.checked_sub(rhs.sample_index).unwrap(), self.sample_rate)
     }
 }
 
@@ -165,6 +183,10 @@ impl Period {
     pub fn duration(&self) -> Duration {
         Duration::new(self.sample_count, self.sample_rate)
     }
+
+    pub fn sample_rate(&self) -> SampleRate {
+        self.sample_rate
+    }
 }
 
 /// A batch of samples received from an input device.
@@ -172,4 +194,24 @@ pub struct Frame {
     pub channels: ChannelCount,
     pub sample_rate: SampleRate,
     pub samples: Vec<f32>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn instant_sub() {
+        let rate = SampleRate::new(1);
+        assert_eq!(
+            Instant::new(42, rate) - Instant::new(32, rate),
+            Duration::new(10, rate)
+        );
+    }
+
+    #[test]
+    fn instant_cmp() {
+        let rate = SampleRate::new(1);
+        assert!(Instant::new(10, rate) > Instant::new(5, rate));
+    }
 }

@@ -5,6 +5,7 @@
 extern crate approx;
 
 pub mod dsp;
+pub mod pitch;
 pub mod stream;
 pub mod synth;
 
@@ -26,3 +27,13 @@ pub enum Message {
     FFTResult(FFTResult),
     RMSLevels(RMSLevels),
 }
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Hz(pub f32);
+
+impl From<Hz> for f32 {
+    fn from(v: Hz) -> f32 {
+        v.0
+    }
+}
+
