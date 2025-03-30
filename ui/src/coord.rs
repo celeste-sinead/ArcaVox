@@ -5,11 +5,11 @@
 //!   [-1.0, 1.0]. Right-handed, i.e. + is right/up
 //! - Screen space: pixel coordinates. Left-handed, i.e. + is right/down
 
-use std::ops::Sub;
+use std::ops::{Range, Sub};
 
 use iced::Rectangle;
 
-use audio::stream::{Duration, Instant, Period};
+use audio::{stream::{Duration, Instant, Period}, Hz};
 
 pub trait Transform<From, To> {
     fn transform(&self, val: From) -> To;
@@ -90,6 +90,41 @@ impl Transform<Instant, f32> for InstantView {
     }
 }
 
+pub struct PitchView {
+    min_freq: f32,
+    log_ratio_range: Range<f32>,
+}
+
+impl PitchView {
+    #[must_use]
+    pub fn new(range: Range<Hz>) -> Self {
+        PitchView {
+            min_freq: range.start.0,
+            log_ratio_range: 0.0 .. (range.end.0 / range.start.0).log2()
+        }
+    }
+}
+
+impl Transform<Hz, f32> for PitchView {
+    fn transform(&self, val: Hz) -> f32 {
+        // log for freq -> pitch:
+        let mut res = (val.0 / self.min_freq).log2();
+        // relative to the view range:
+        res = (res - self.log_ratio_range.start) / (self.log_ratio_range.end - self.log_ratio_range.start);
+        // offset to the (-1, 1) view space
+        res * 2.0 - 1.0
+    }
+
+    fn inverse(&self, val: f32) -> Hz {
+        // (-1, 1) -> (0, 1)
+        let mut res = (val + 1.0) / 2.0;
+        // to the log-ratio:
+        res = res * (self.log_ratio_range.end - self.log_ratio_range.start) + self.log_ratio_range.start;
+        // invert log and multiply out ratio:
+        Hz(f32::powf(2.0, res) * self.min_freq)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -134,5 +169,19 @@ mod tests {
         assert_eq!(t.inverse(-1.2), Instant::new(32, rate));
         assert_eq!(t.inverse(-1.0), Instant::new(42, rate));
         assert_eq!(t.inverse(1.0), Instant::new(142, rate));
+    }
+
+    #[test]
+    fn pitch_view () {
+        let t = PitchView::new(Hz(110.) .. Hz(440.));
+        assert_relative_eq!(t.transform(Hz(0.0)), f32::NEG_INFINITY);
+        assert_relative_eq!(t.transform(Hz(55.)), -2.0);
+        assert_relative_eq!(t.inverse(-2.0), Hz(55.));
+        assert_relative_eq!(t.transform(Hz(110.)), -1.0);
+        assert_relative_eq!(t.inverse(-1.0), Hz(110.));
+        assert_relative_eq!(t.transform(Hz(220.)), 0.0);
+        assert_relative_eq!(t.inverse(0.0), Hz(220.));
+        assert_relative_eq!(t.transform(Hz(440.)), 1.0);
+        assert_relative_eq!(t.inverse(1.0), Hz(440.));
     }
 }
