@@ -42,8 +42,10 @@ impl SampleBuffer {
 
     #[must_use]
     pub fn from_mono<I: Iterator<Item = f32>>(
-        sample_rate: SampleRate, samples: &mut I, max_len: usize) -> Self
-    {
+        sample_rate: SampleRate,
+        samples: &mut I,
+        max_len: usize,
+    ) -> Self {
         let mut res = SampleBuffer::new(ChannelCount::new(1), sample_rate, max_len);
         res.push_some_mono(samples, max_len);
         res
@@ -75,7 +77,11 @@ impl SampleBuffer {
     }
 
     #[allow(clippy::missing_panics_doc)]
-    pub fn push_some_mono<I: Iterator<Item = f32>>(&mut self, samples: &mut I, max_count: usize) -> usize {
+    pub fn push_some_mono<I: Iterator<Item = f32>>(
+        &mut self,
+        samples: &mut I,
+        max_count: usize,
+    ) -> usize {
         assert!(usize::from(self.channels) == 1);
         let pushed = self.push_channel(0, samples, max_count);
         self.sample_count += pushed;
@@ -275,8 +281,8 @@ impl Iterator for TimeseriesIterator<'_> {
             self.index += 1;
             res
         } else if self.first_slice {
-                self.first_slice = false;
-                self.next()
+            self.first_slice = false;
+            self.next()
         } else {
             None
         }
@@ -489,10 +495,14 @@ mod tests {
 
     #[test]
     fn from_iter_mono() {
-        let mut buf = SampleBuffer::from_mono(SampleRate::new(1), &mut [1., 2., 3.].into_iter(), 16);
+        let mut buf =
+            SampleBuffer::from_mono(SampleRate::new(1), &mut [1., 2., 3.].into_iter(), 16);
         assert_eq!(buf.buffers[0].as_slices().0, [1., 2., 3.].as_slice());
         assert_eq!(buf.push_some_mono(&mut [4., 5., 6.].into_iter(), 2), 2);
-        assert_eq!(buf.buffers[0].as_slices().0, [1., 2., 3., 4., 5.].as_slice());
+        assert_eq!(
+            buf.buffers[0].as_slices().0,
+            [1., 2., 3., 4., 5.].as_slice()
+        );
         assert_eq!(buf.len(), 5);
     }
 

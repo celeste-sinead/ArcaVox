@@ -75,7 +75,7 @@ impl ChirpIterator {
         ChirpIterator {
             base_freq,
             freq_slope,
-            clock: SampleClock::new(sample_rate)
+            clock: SampleClock::new(sample_rate),
         }
     }
 }
@@ -85,9 +85,9 @@ impl Iterator for ChirpIterator {
 
     fn next(&mut self) -> Option<f32> {
         let t = self.clock.next().unwrap(); // (infinite)
-        // See https://en.wikipedia.org/wiki/Chirp#Linear
-        // TODO: tests, I might have the Hz->rad/s conversion fucky
-        Some((PI * (t*t*self.freq_slope + 2.0*t*self.base_freq)).sin())
+                                            // See https://en.wikipedia.org/wiki/Chirp#Linear
+                                            // TODO: tests, I might have the Hz->rad/s conversion fucky
+        Some((PI * (t * t * self.freq_slope + 2.0 * t * self.base_freq)).sin())
     }
 }
 

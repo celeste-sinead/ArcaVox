@@ -69,11 +69,7 @@ fn view(synth: &Synthesizer) -> Element<Message> {
         widget::row![
             widget::text("Pitch"),
             widget::Space::new(Length::Fixed(10.), Length::Shrink),
-            widget::slider(
-                50f32..=2000f32,
-                synth.frequency,
-                Message::FrequencyChanged
-            ),
+            widget::slider(50f32..=2000f32, synth.frequency, Message::FrequencyChanged),
             widget::Space::new(Length::Fixed(10.), Length::Shrink),
             widget::text(format!("{} Hz", synth.frequency))
         ]

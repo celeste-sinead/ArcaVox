@@ -20,8 +20,7 @@ const FREQ_SLOPE: f32 = 0.1;
 /// Kind of an arbitrary scalar, given the current absence of axis labels:
 const SAMPLE_RATE: u32 = 32;
 
-struct SpecExample
-{
+struct SpecExample {
     ffts: Vec<FoldedFFT>,
 }
 
@@ -35,11 +34,13 @@ impl Default for SpecExample {
 
         for i in 0..WINDOW_COUNT {
             buf.push_some_mono(&mut synth, WINDOW_SIZE);
-            let window = Period::new(i*WINDOW_SIZE, WINDOW_SIZE, sample_rate);
+            let window = Period::new(i * WINDOW_SIZE, WINDOW_SIZE, sample_rate);
             ffts.push(
-                ffter.fft(&buf.get_window(window).get_channel(0))
-                .into_polar()
-                .into_folded());
+                ffter
+                    .fft(&buf.get_window(window).get_channel(0))
+                    .into_polar()
+                    .into_folded(),
+            );
         }
 
         SpecExample { ffts }
@@ -55,7 +56,7 @@ fn view(ex: &SpecExample) -> Element<Message> {
     widget::Container::new(
         canvas(Spectrogram::new(ex.ffts.clone()))
             .width(Length::Fill)
-            .height(Length::Fill)
+            .height(Length::Fill),
     )
     .width(Length::Fill)
     .height(Length::Fill)

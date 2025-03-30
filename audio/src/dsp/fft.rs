@@ -6,9 +6,9 @@ use approx::AbsDiffEq;
 use num_complex::Complex;
 use rustfft::{Fft, FftPlanner};
 
-use crate::Hz;
 use crate::stream::buffer::ChannelPeriod;
 use crate::stream::input::SampleRate;
+use crate::Hz;
 
 pub struct FFTSequence {
     fft: Arc<dyn Fft<f32>>,

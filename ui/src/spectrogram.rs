@@ -4,7 +4,7 @@ use iced::{Color, Point, Rectangle, Renderer, Size, Theme};
 use audio::dsp::fft::FoldedFFT;
 
 pub struct Spectrogram {
-    ffts: Vec<FoldedFFT>
+    ffts: Vec<FoldedFFT>,
 }
 
 impl Spectrogram {
@@ -34,21 +34,22 @@ impl<Message> canvas::Program<Message> for Spectrogram {
             // (Assuming constant FFT size) compute the fraction of the frame that each frequency
             // bin should fill in order to completely tile the frame with bins.
             let bin_width_frac: f32 = 1. / self.ffts.len() as f32;
-            let bin_height_frac = 1. /  first.values.len() as f32;
+            let bin_height_frac = 1. / first.values.len() as f32;
             // for each FFT / column:
             for (i, fft) in self.ffts.iter().enumerate() {
                 // for each frequency bin / row: (r=magnitude, θ=phase)
                 for (j, (r, _θ)) in fft.values.iter().enumerate() {
                     let top_left = Point::new(
-                            (i as f32)*bin_width_frac*frame.width(),
-                            (1.0 - (j as f32 + 1.)*bin_height_frac)*frame.height());
+                        (i as f32) * bin_width_frac * frame.width(),
+                        (1.0 - (j as f32 + 1.) * bin_height_frac) * frame.height(),
+                    );
                     frame.fill_rectangle(
                         top_left,
                         Size::new(
-                            frame.width()*bin_width_frac,
-                            frame.height()*bin_height_frac
+                            frame.width() * bin_width_frac,
+                            frame.height() * bin_height_frac,
                         ),
-                        Color::from_rgb(*r, 0., *r)
+                        Color::from_rgb(*r, 0., *r),
                     );
                 }
             }

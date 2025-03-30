@@ -6,5 +6,5 @@
 #[macro_use]
 extern crate approx;
 
-pub mod spectrogram;
 pub mod coord;
+pub mod spectrogram;

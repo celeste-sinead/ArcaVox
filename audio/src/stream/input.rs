@@ -1,7 +1,7 @@
 use async_channel;
 use async_channel::{Receiver, TryRecvError, TrySendError};
-use cpal::{self, SupportedStreamConfigRange};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::{self, SupportedStreamConfigRange};
 
 use super::executor::CHANNEL_MAX;
 use super::pipeline::Step;
@@ -85,7 +85,10 @@ pub struct InputDevice {
 }
 
 impl InputDevice {
-    pub fn new(channels: ChannelCount, sample_rate: SampleRate) -> Result<InputDevice, InputDeviceError> {
+    pub fn new(
+        channels: ChannelCount,
+        sample_rate: SampleRate,
+    ) -> Result<InputDevice, InputDeviceError> {
         let host = cpal::default_host();
         // TODO: some way of selecting from available devices?
         let device = host.default_input_device().unwrap();
@@ -101,11 +104,11 @@ impl InputDevice {
 
         if supported.is_none() {
             return Err(InputDeviceError::UnsupportedChannelCount(
-                channels, 
-                device.supported_input_configs().map_or(
-                    Vec::new(),
-                    |opts| opts.into_iter().collect()
-                )));
+                channels,
+                device
+                    .supported_input_configs()
+                    .map_or(Vec::new(), |opts| opts.into_iter().collect()),
+            ));
         }
 
         // TODO: make sure the desired sample rate is actually supported

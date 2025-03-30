@@ -10,9 +10,9 @@ pub use std::f32::consts::PI;
 
 pub use audio;
 pub use audio::dsp::fft::FoldedFFT;
-pub use audio::stream::Duration;
 pub use audio::stream::buffer::{BufferedInput, Period};
 pub use audio::stream::input::SampleRate;
+pub use audio::stream::Duration;
 pub use charts;
 pub use num_complex::Complex;
 pub use plotters;
@@ -30,7 +30,7 @@ pub fn plot_period(period: &Period) -> SVGWrapper {
             .margin(20)
             .x_label_area_size(30)
             .y_label_area_size(30)
-            .build_cartesian_2d( start_s..end_s, -1f32..1f32,)?;
+            .build_cartesian_2d(start_s..end_s, -1f32..1f32)?;
         chart.configure_mesh().draw()?;
 
         let series = period

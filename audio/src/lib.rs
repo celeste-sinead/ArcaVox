@@ -36,4 +36,3 @@ impl From<Hz> for f32 {
         v.0
     }
 }
-

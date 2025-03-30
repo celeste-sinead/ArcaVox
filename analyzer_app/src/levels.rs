@@ -24,8 +24,13 @@ impl Chart<Message> for LevelsChart {
     fn build_chart<DB: DrawingBackend>(&self, _state: &Self::State, mut builder: ChartBuilder<DB>) {
         use plotters::prelude::*;
 
-        let tmin = self.times.front().map_or(0., |t| t.as_secs_from_start_f32());
-        let tmax = self.times.back()
+        let tmin = self
+            .times
+            .front()
+            .map_or(0., |t| t.as_secs_from_start_f32());
+        let tmax = self
+            .times
+            .back()
             .map_or(0., |t| t.as_secs_from_start_f32())
             .max(self.max_history.as_secs_f32());
 
@@ -43,7 +48,8 @@ impl Chart<Message> for LevelsChart {
         for (i, (ch, color)) in zip(&self.levels, [BLUE, GREEN, RED, CYAN]).enumerate() {
             chart
                 .draw_series(LineSeries::new(
-                    zip(&self.times, ch).map(|(t, rms)| (t.as_secs_from_start_f32(), f32::from(*rms))),
+                    zip(&self.times, ch)
+                        .map(|(t, rms)| (t.as_secs_from_start_f32(), f32::from(*rms))),
                     color,
                 ))
                 .expect("draw series")
