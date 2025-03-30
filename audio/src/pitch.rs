@@ -1,7 +1,10 @@
 use std::fmt;
 
+use approx::AbsDiffEq;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
+
+use crate::Hz;
 
 #[derive(Copy, Clone, Debug, Eq, FromPrimitive, PartialEq)]
 pub enum Semitone {
@@ -131,14 +134,14 @@ impl fmt::Display for Semitone {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Pitch {
     /// e.g. the 4 in C4:
     octave: i16,
     /// Which semitone in the octave (C is 0)
     semitone: Semitone,
     /// How far out of tune:
-    cents: i8,
+    cents: f32,
 }
 
 impl Pitch {
@@ -146,11 +149,11 @@ impl Pitch {
         Pitch {
             semitone,
             octave,
-            cents: 0,
+            cents: 0.,
         }
     }
 
-    pub fn new_with_cents(semitone: Semitone, octave: i16, cents: i8) -> Self {
+    pub fn new_with_cents(semitone: Semitone, octave: i16, cents: f32) -> Self {
         Pitch {
             semitone,
             octave,
@@ -170,7 +173,7 @@ impl TryFrom<&str> for Pitch {
                     Ok(octave) => Ok(Pitch {
                         octave,
                         semitone,
-                        cents: 0,
+                        cents: 0.,
                     }),
                     Err(e) => Err(format!("Bad octave: {val}: {e}")),
                 }
@@ -182,11 +185,68 @@ impl TryFrom<&str> for Pitch {
 
 impl fmt::Display for Pitch {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.cents == 0 {
+        if self.cents == 0. {
             write!(f, "{}{}", self.semitone, self.octave)
         } else {
             write!(f, "{}{}{:+}", self.semitone, self.octave, self.cents)
         }
+    }
+}
+
+impl AbsDiffEq for Pitch {
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        f32::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        if self.octave == other.octave && self.semitone == other.semitone {
+            self.cents.abs_diff_eq(&other.cents, epsilon)
+        } else {
+            false
+        }
+    }
+}
+
+pub struct Tuning {
+    ref_freq: Hz,
+    ref_pitch: Pitch,
+}
+
+impl Tuning {
+    pub const A440: Tuning = Tuning {
+        ref_freq: Hz(440.),
+        ref_pitch: Pitch {
+            octave: 4,
+            semitone: Semitone::A,
+            cents: 0.,
+        },
+    };
+
+    pub fn pitch_from(&self, freq: Hz) -> Pitch {
+        // Number of semitones from the reference frequency:
+        let mut semitones = (freq.0 / self.ref_freq.0).log2() * 12.0;
+        // From the bottom of the reference octave:
+        semitones += self.ref_pitch.semitone as u8 as f32;
+        // Nearest whole semitone and distance in cents:
+        let cents = (semitones - semitones.round()) * 100.0;
+        let semitones = semitones.round() as i32;
+        // Number of octaves from the reference, and pitch within octave:
+        let octaves = semitones.div_euclid(12);
+        let semitone = Semitone::from_i32(semitones.rem_euclid(12)).unwrap();
+        Pitch::new_with_cents(semitone, octaves as i16 + self.ref_pitch.octave, cents)
+    }
+
+    pub fn freq_from(&self, pitch: Pitch) -> Hz {
+        let mut semitones = pitch.semitone as i32;
+        // Distance bottom of reference octave:
+        semitones += (pitch.octave - self.ref_pitch.octave) as i32 * 12;
+        // Distance from reference semitone:
+        semitones -= self.ref_pitch.semitone as i32;
+        let semitones = semitones as f32 + pitch.cents / 100.0;
+
+        Hz(self.ref_freq.0 * f32::powf(2.0, semitones / 12.))
     }
 }
 
@@ -222,10 +282,65 @@ mod tests {
     #[test]
     fn pitch_display() {
         assert_eq!(Pitch::new(Semitone::C, 4).to_string(), "C4");
-        assert_eq!(Pitch::new_with_cents(Semitone::C, 4, 7).to_string(), "C4+7");
         assert_eq!(
-            Pitch::new_with_cents(Semitone::C, 4, -14).to_string(),
+            Pitch::new_with_cents(Semitone::C, 4, 7.).to_string(),
+            "C4+7"
+        );
+        assert_eq!(
+            Pitch::new_with_cents(Semitone::C, 4, -14.).to_string(),
             "C4-14"
+        );
+    }
+
+    #[test]
+    fn freq_to_pitch() {
+        assert_eq!(
+            Tuning::A440.pitch_from(Hz(440.)),
+            Pitch::new(Semitone::A, 4)
+        );
+        assert_abs_diff_eq!(
+            Tuning::A440.pitch_from(Hz(9.722)),
+            Pitch::new(Semitone::Ds, -1),
+            epsilon = 0.5
+        );
+        assert_abs_diff_eq!(
+            Tuning::A440.pitch_from(Hz(167.)),
+            Pitch::new_with_cents(Semitone::E, 3, 23.),
+            epsilon = 0.5
+        );
+        assert_abs_diff_eq!(
+            Tuning::A440.pitch_from(Hz(479.5)),
+            Pitch::new_with_cents(Semitone::As, 4, 49.),
+            epsilon = 0.5
+        );
+        assert_abs_diff_eq!(
+            Tuning::A440.pitch_from(Hz(480.)),
+            Pitch::new_with_cents(Semitone::B, 4, -49.),
+            epsilon = 0.5
+        );
+        assert_abs_diff_eq!(
+            Tuning::A440.pitch_from(Hz(740.)),
+            Pitch::new(Semitone::Fs, 5),
+            epsilon = 0.5
+        );
+    }
+
+    #[test]
+    fn pitch_to_freq() {
+        assert_eq!(Tuning::A440.freq_from(Pitch::new(Semitone::A, 4)), Hz(440.));
+        assert_abs_diff_eq!(
+            Tuning::A440
+                .freq_from(Pitch::new_with_cents(Semitone::B, 3, 49.))
+                .0,
+            254.0,
+            epsilon = 0.5
+        );
+        assert_abs_diff_eq!(
+            Tuning::A440
+                .freq_from(Pitch::new_with_cents(Semitone::E, 5, -49.))
+                .0,
+            640.8,
+            epsilon = 0.5
         );
     }
 }
