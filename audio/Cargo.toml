@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 cpal = "0.15.3"
 hound = "3.5.1"
-rustfft = "6.2.0"
+rustfft = "6.3.0"
 
 approx.workspace = true
 async-channel.workspace = true
