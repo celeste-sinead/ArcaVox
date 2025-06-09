@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cpal = "0.15.3"
+cpal = "0.16.0"
 hound = "3.5.1"
 rustfft = "6.3.0"
 
